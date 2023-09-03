@@ -1,0 +1,47 @@
+packages:
+  - name: linux-headers
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Linux kernel headers
+      description: This package provides the Linux headers installed into /usr/include
+      spdx: 'GPL-2.0-only'
+      website: 'https://kernel.org'
+      maintainer: "Alexander Richards <electrodeyt@gmail.com>"
+      categories: ['sys-kernel']
+    source:
+      subdir: 'ports'
+      url: 'https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.2.9.tar.xz'
+      checksum: 'blake2b:0e7ad5502767cb74fa0fea79884ce753be0421a56bbbe0a6cb66add5839b3329298671725595c0624886d9d2836c4e9d4bd152acefb2b3df1cf7a1013e0178ba'
+      extract_path: 'linux-6.2.9'
+      format: 'tar.xz'
+      version: '6.2.9'
+    configure:
+      - args: ['cp', '-Tr', '@THIS_SOURCE_DIR@', '.']
+    build:
+      - args: |
+          LINUX_ARCH="@OPTION:arch@"
+          case "$LINUX_ARCH" in
+            "aarch64")
+              LINUX_ARCH="arm64"
+              ;;
+            "riscv64")
+              LINUX_ARCH="riscv"
+              ;;
+          esac
+          make ARCH="$LINUX_ARCH" headers_install
+      - args: ['find', 'usr/include', '-type', 'f', '!', '-name', '*.h', '-delete']
+      # Sometimes, xbstrap does not clean collect dirs.  We don't want those
+      # cases to break.  If we don't do this special handling, and don't pass
+      # -T to GNU cp below, it might be the case that cp installs linux-headers
+      # into /usr/include/include or /usr/src/linux-headers/include.  GNU cp
+      # has -T, which disables this behavior, and instead lets us be specific
+      # about what we want our destination directory name to be.  This,
+      # however, also merges directories, so we want to clear any existing
+      # files.
+      - args: ['rm', '-rf', '@THIS_COLLECT_DIR@/usr/src/linux-headers']
+      - args: ['rm', '-rf', '@THIS_COLLECT_DIR@/usr/include']
+      # remove this file, as mlibc will override this file with one suited to mlibc
+      - args: ['rm', 'usr/include/linux/libc-compat.h']
+      - args: ['mkdir', '-p', '@THIS_COLLECT_DIR@/usr/src']
+      - args: ['cp', '-Tr', 'usr/include', '@THIS_COLLECT_DIR@/usr/include']
+      - args: ['cp', '-Tr', 'usr/include', '@THIS_COLLECT_DIR@/usr/src/linux-headers']

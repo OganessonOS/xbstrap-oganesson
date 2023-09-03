@@ -1,0 +1,50 @@
+general:
+    patch_author: Oganesson Project
+    patch_email: electrodeyt@gmail.com
+    everything_by_default: false
+    mandate_hashes_for_archives: true
+
+imports:
+  - file: bootstrap.d/tools/autotools.yml
+  - file: bootstrap.d/tools/compilers.yml
+  - file: bootstrap.d/tools/misc.yml
+  - file: bootstrap.d/packages/sys-kernel.yml
+  - file: bootstrap.d/oganesson/system.yml
+
+# TODO: We currently don't support computed options or anything of that sort,
+#       so we just define the architecture, and the triple as 2 options
+#       (some packages, like llvm and libjpeg-turbo need the architecture)
+declare_options:
+  - name: arch
+    default: x86_64
+  - name: arch-triple
+    default: x86_64-oganesson
+  - name: mount-using
+    default: guestfs
+
+# Some useful global sources
+sources:
+  - name: binutils
+    subdir: 'ports'
+    git: 'https://sourceware.org/git/binutils-gdb.git'
+    tag: 'binutils-2_32'
+    version: '2.32'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+    regenerate:
+      - args: ['autoreconf']
+        workdir: '@THIS_SOURCE_DIR@/ld'   
+  - name: gcc
+    subdir: 'ports'
+    git: 'https://gcc.gnu.org/git/gcc.git'
+    tag: 'releases/gcc-11.1.0'
+    version: '11.1.0'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.11
+    regenerate:
+      - args: ['autoconf']
+        workdir: '@THIS_SOURCE_DIR@/gcc'
+      - args: ['autoconf']
+        workdir: '@THIS_SOURCE_DIR@/libstdc++-v3'

@@ -1,0 +1,15 @@
+
+[binaries]
+c = 'x86_64-oganesson-gcc'
+cpp = 'x86_64-oganesson-g++'
+ar = 'x86_64-oganesson-ar'
+strip = 'x86_64-oganesson-strip'
+pkgconfig = 'x86_64-oganesson-pkg-config'
+# sed adds binaries here.
+
+[host_machine]
+system = 'oganesson'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'
+
