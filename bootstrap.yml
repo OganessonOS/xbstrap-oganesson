@@ -8,6 +8,7 @@ imports:
   - file: bootstrap.d/tools/autotools.yml
   - file: bootstrap.d/tools/compilers.yml
   - file: bootstrap.d/tools/misc.yml
+  - file: bootstrap.d/tools/boot.yml
   - file: bootstrap.d/packages/sys-kernel.yml
   - file: bootstrap.d/oganesson/system.yml
 

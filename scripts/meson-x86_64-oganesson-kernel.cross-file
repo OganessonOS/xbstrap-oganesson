@@ -1,0 +1,27 @@
+
+[binaries]
+c = 'x86_64-oganesson-gcc'
+cpp = 'x86_64-oganesson-g++'
+ar = 'x86_64-oganesson-ar'
+strip = 'x86_64-oganesson-strip'
+pkgconfig = 'x86_64-oganesson-pkg-config'
+# sed adds binaries here.
+
+[host_machine]
+system = 'oganesson'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'
+
+[constants]
+args = ['-ffreestanding', '-fno-stack-protector', '-fno-stack-check', '-fPIE', '-mno-80387', '-mno-mmx', '-mno-sse', '-mno-sse2', '-mno-red-zone']
+cxx = args + ['-fsized-deallocation']
+
+[built-in options]
+cpp_rtti = false
+cpp_eh = 'none'
+c_args = args
+c_link_args = args
+cpp_args = cxx
+cpp_link_args = cxx
+

@@ -1,0 +1,121 @@
+sources:
+  - name: image-builder
+    subdir: 'ports'
+    git: 'https://github.com/vineyard-os/image-builder'
+    branch: 'master'
+    rolling_version: true
+    version: '0.0pl@ROLLING_ID@'
+
+  - name: limine
+    subdir: 'ports'
+    url: 'https://github.com/limine-bootloader/limine/releases/download/v5.20230819.0/limine-5.20230819.0.tar.xz'
+    format: 'tar.xz'
+    checksum: blake2b:cb175144a37ae204a8a4c2ff2f8d935864a9acc8ad4872d9c34b921ed1b219bf86856747df9b385d6996d6a29471343301db57bc09e00ab28b243d986678e8b7
+    extract_path: 'limine-5.20230819.0'
+    version: '5.20230819.0'
+    tools_required:
+      - host-autoconf-v2.69
+      - host-automake-v1.15
+    regenerate:
+      - args: ['autoreconf', '-fvi']
+
+tools:
+  - name: host-limine
+    architecture: '@OPTION:arch@'
+    from_source: limine
+    tools_required:
+      # TODO: fix cross-gcc
+      - bootstrap-cross-gcc
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--prefix=@PREFIX@'
+        - '--enable-uefi-ia32'
+        - '--enable-uefi-x86-64'
+        - '--enable-uefi-cd'
+        - '--enable-bios'
+        - '--enable-bios-cd'
+        - '--enable-bios-pxe'
+        - 'TOOLCHAIN_FOR_TARGET=@OPTION:arch-triple@'
+        - 'LDFLAGS=-static'
+    compile:
+      - args: ['make', '-j@PARALLELISM@']
+    install:
+      - args: ['mkdir', '-p', '@PREFIX@/share/limine']
+      - args: ['cp', '-rv', 'bin/.', '@PREFIX@/share/limine/']
+
+  - name: host-image-builder
+    architecture: '@OPTION:arch@'
+    from_source: image-builder
+    install:
+      - args: ['mkdir', '-p', '@PREFIX@/bin']
+      - args: ['cp', '-v', '@THIS_SOURCE_DIR@/builder', '@PREFIX@/bin/image-builder']
+      - args: ['chmod', '+x', '@PREFIX@/bin/image-builder']
+
+tasks:
+  - name: initialize-empty-image
+    tools_required:
+      - host-limine
+      - host-image-builder
+    args: |
+      set -e
+      {
+        echo "set -x";
+        echo "set -e";
+        echo "export PATH=\$PATH:/sbin";
+        image-builder \
+        --bootloader \
+        -o @BUILD_ROOT@/image \
+        --mount \
+        --elevator=sudo \
+        @SOURCE_ROOT@/scripts/initialize-image-format.yml; } | bash
+    environ:
+      'LIMINE_PATH': '@BUILD_ROOT@/tools/host-limine/share/limine/limine'
+      'LIMINE_EFI_IA32': '@BUILD_ROOT@/tools/host-limine/share/limine/BOOTIA32.EFI'
+      'LIMINE_EFI_X64': '@BUILD_ROOT@/tools/host-limine/share/limine/BOOTX64.EFI'
+      'LIMINE_BIOS': '@BUILD_ROOT@/tools/host-limine/share/limine/limine-bios.sys'
+    workdir: '@BUILD_ROOT@'
+    containerless: true
+
+  - name: make-image
+    tools_required:
+      - host-limine
+      - host-image-builder
+    args: |
+      set -e
+      {
+        echo "set -x";
+        echo "set -e";
+        echo "export PATH=\$PATH:/sbin";
+        image-builder \
+        -o @BUILD_ROOT@/image \
+        --mount \
+        --elevator=sudo \
+        --reuse-partitions \
+        --skip-format \
+        @SOURCE_ROOT@/scripts/update-image-format.yml; } | bash
+    workdir: '@BUILD_ROOT@'
+    containerless: true
+
+  - name: qemu
+    tasks_required:
+      - make-image
+    args:
+      - qemu-system-x86_64
+      - '-drive'
+      - 'format=raw,file=@BUILD_ROOT@/image'
+      - '-serial'
+      - 'stdio'
+      - '-machine'
+      - 'q35,accel=kvm:whpx:tcg'
+      - '-m'
+      - '2G'
+      - '-vga'
+      - 'virtio'
+      - '-device'
+      - 'qemu-xhci,id=xhci'
+      - '-device'
+      - 'usb-kbd,bus=xhci.0'
+      - '-device'
+      - 'usb-tablet,bus=xhci.0'
+    containerless: true

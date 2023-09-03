@@ -146,8 +146,6 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
         quiet: true
 
-
-
   - name: tenessine-kernel
     metadata:
       summary: Tenessine Kernel
@@ -156,3 +154,43 @@ packages:
       website: 'https://oganesson.site'
       maintainer: "Alexander Richards <electrodeyt@gmail.com>"
       categories: ['sys-kernel']
+    source:
+      rolling_version: true
+      version: '0.0pl@ROLLING_ID@'
+      subdir: 'system'
+      git: 'https://github.com/OganessonOS/tenessine.git'
+      branch: 'master'
+    tools_required:
+      - bootstrap-cross-gcc
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--cross-file=@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@-kernel.cross-file'
+        - '--prefix=/boot'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - '--wrap-mode=nofallback'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: core-files
+    metadata:
+      summary: Core system files
+      description: This package provides core system files and directories.
+      maintainer: "Alexander Richards <electrodeyt@gmail.com>"
+      categories: ['sys-kernel']
+    source:
+      rolling_version: true
+      version: '0.0pl@ROLLING_ID@'
+      subdir: 'system'
+      git: 'https://github.com/OganessonOS/core-files.git'
+      branch: 'master'
+    build:
+      - args: ['cp', '-r', '@THIS_SOURCE_DIR@/usr', '@THIS_SOURCE_DIR@/etc', '@THIS_SOURCE_DIR@/boot', '@THIS_COLLECT_DIR@']
+      - args: ['cp', '@SOURCE_ROOT@/scripts/limine.cfg', '@THIS_COLLECT_DIR@/boot']

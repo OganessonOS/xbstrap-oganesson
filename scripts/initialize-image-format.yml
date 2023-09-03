@@ -1,0 +1,17 @@
+file: 'image'
+vmdk: 'image.vmdk'
+vdi: 'image.vdi'
+
+size: 512M
+type: gpt
+
+bootloader:
+  name: limine
+  partition: 0
+
+partitions:
+  - fs: fat32
+    size: fit
+    bootable: true
+    label: EFI
+
